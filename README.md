@@ -1,41 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Function Workflow Builder
+
+A visual function workflow builder that allows users to connect and chain mathematical functions together. Built with Next.js, TypeScript, and Tailwind CSS.
+
+## Features
+
+- **Visual Function Chaining**: Drag and drop connections between functions to create a workflow
+- **Interactive UI**:
+  - Initial value input (x)
+  - Multiple mathematical functions
+  - Final output display (y)
+- **Dynamic Connections**:
+  - Smooth curved paths for diagonal connections
+  - Semi-circular paths for aligned connections
+  - Straight lines for terminal connections
+- **Real-time Updates**: Connections update automatically as components move or resize
+
+## Technical Stack
+
+- **Framework**: Next.js
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **SVG**: Dynamic path generation for connections
+- **State Management**: React useState and useCallback hooks
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/function-workflow-builder.git
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Run the development server:
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+1. **Initial Value**: Set the starting value (x) in the orange input box
+2. **Connect Functions**:
+   - Click and drag from output points (right side) to input points (left side)
+   - Functions can be connected in any order
+3. **Final Output**: The result will be displayed in the green output box
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── components/
+│   └── Workflow/
+│       └── index.tsx      # Main workflow component
+├── constants/
+│   └── workflow.ts        # Constants and default values
+├── types/
+│   └── workflow.ts        # TypeScript interfaces
+└── utils/
+    └── workflow.ts        # Utility functions for path generation
+```
 
-## Learn More
+## Contributing
 
-To learn more about Next.js, take a look at the following resources:
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
-# workflow-task
+This project is licensed under the MIT License - see the LICENSE file for details.
