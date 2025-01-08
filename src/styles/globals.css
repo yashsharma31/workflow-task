@@ -2,20 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+.function-box {
+  position: relative;
+  z-index: 10;
+  user-select: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.initial-value,
+.final-output {
+  position: relative;
+  z-index: 10;
+  user-select: none;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+.input-point,
+.output-point {
+  transition: all 0.2s ease;
+  z-index: 30;
+  position: absolute;
+  user-select: none;
+}
+
+.input-point:hover,
+.output-point:hover {
+  transform: scale(1.2) translateY(-50%) !important;
+  background-color: #dbeafe;
+}
+
+.dragging {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
