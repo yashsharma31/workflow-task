@@ -47,6 +47,123 @@ const evaluateExpression = (expression: string, x: number): number => {
   }
 };
 
+// Move CustomDropdown outside of Workflow component
+const CustomDropdown = ({
+  functionId,
+  currentValue,
+  onSelect,
+  openDropdownId,
+  setOpenDropdownId,
+  functions,
+}: {
+  functionId: number;
+  currentValue?: number;
+  onSelect: (value: string) => void;
+  openDropdownId: number | null;
+  setOpenDropdownId: (id: number | null) => void;
+  functions: Function[];
+}) => {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const allowedNextFunction =
+    FIXED_EXECUTION_ORDER[functionId as keyof typeof FIXED_EXECUTION_ORDER];
+
+  const availableConnections: DropdownOption[] = [
+    {
+      value: "",
+      label: "None",
+      disabled: functionId === 1,
+    },
+    ...functions
+      .filter((f) => f.id !== functionId)
+      .map((f) => ({
+        value: f.id.toString(),
+        label: `Function: ${f.id}`,
+        disabled: allowedNextFunction !== f.id,
+      })),
+  ];
+
+  if (!functions.some((f) => f.nextFunction === -1)) {
+    availableConnections.push({
+      value: "-1",
+      label: "Final Output",
+      disabled: allowedNextFunction !== -1,
+    });
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Dropdown trigger button */}
+      <div
+        onClick={() =>
+          setOpenDropdownId(openDropdownId === functionId ? null : functionId)
+        }
+        className="flex justify-between items-center border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 border rounded-md w-full cursor-pointer"
+      >
+        <span className="text-gray-700">
+          {currentValue === undefined
+            ? "None"
+            : currentValue === -1
+            ? "Final Output"
+            : `Function: ${currentValue}`}
+        </span>
+        <svg
+          className={`w-5 h-5 transition-transform ${
+            openDropdownId === functionId ? "transform rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </div>
+
+      {/* Dropdown menu */}
+      {openDropdownId === functionId && (
+        <div
+          className="z-[9999] absolute border-gray-200 bg-white shadow-lg mt-1 border rounded-md w-full max-h-60 overflow-auto"
+          style={{
+            minWidth: "200px",
+            position: "absolute",
+            top: "100%",
+            left: 0,
+          }}
+        >
+          {availableConnections.map((option) => (
+            <div
+              key={option.value}
+              className={`px-4 py-2 ${
+                option.disabled
+                  ? "cursor-not-allowed text-gray-400 bg-gray-50"
+                  : "cursor-pointer hover:bg-blue-50"
+              } ${currentValue === Number(option.value) ? "bg-blue-100" : ""}`}
+              onClick={() => {
+                if (!option.disabled) {
+                  onSelect(option.value);
+                  setOpenDropdownId(null);
+                }
+              }}
+            >
+              {option.label}
+              {option.disabled && (
+                <span className="ml-2 text-gray-400 text-xs">
+                  (Not allowed)
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function Workflow() {
   const [functions, setFunctions] = useState<Function[]>([
     { id: 1, equation: "x^2", previousFunction: 0 },
@@ -296,117 +413,32 @@ export default function Workflow() {
     });
   };
 
-  // Add this component inside Workflow but before the return statement
-  const CustomDropdown = ({
-    functionId,
-    currentValue,
-    onSelect,
-  }: {
-    functionId: number;
-    currentValue?: number;
-    onSelect: (value: string) => void;
-  }) => {
-    const dropdownRef = useRef<HTMLDivElement>(null);
+  // Add this effect after other effects
+  useEffect(() => {
+    // Update on window resize
+    const handleResize = () => updateDimensionsAndConnections();
+    window.addEventListener("resize", handleResize);
 
-    // Get the allowed next connection based on fixed order
-    const allowedNextFunction =
-      FIXED_EXECUTION_ORDER[functionId as keyof typeof FIXED_EXECUTION_ORDER];
+    // Update on DOM mutations
+    const mutationObserver = new MutationObserver(() => {
+      updateDimensionsAndConnections();
+    });
 
-    // Create available connections array with all options
-    const availableConnections: DropdownOption[] = [
-      {
-        value: "",
-        label: "None",
-        // Disable "None" option for Function 1 since it must stay connected to input
-        disabled: functionId === 1,
-      },
-      ...functions
-        .filter((f) => f.id !== functionId)
-        .map((f) => ({
-          value: f.id.toString(),
-          label: `Function: ${f.id}`,
-          disabled: allowedNextFunction !== f.id,
-        })),
-    ];
-
-    // Add Final Output option
-    if (!functions.some((f) => f.nextFunction === -1)) {
-      availableConnections.push({
-        value: "-1",
-        label: "Final Output",
-        disabled: allowedNextFunction !== -1,
+    if (containerRef.current) {
+      mutationObserver.observe(containerRef.current, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["style", "class"],
       });
     }
 
-    return (
-      <div className="relative" ref={dropdownRef}>
-        {/* Dropdown trigger button */}
-        <div
-          onClick={() =>
-            setOpenDropdownId(openDropdownId === functionId ? null : functionId)
-          }
-          className="flex justify-between items-center border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 border rounded-md w-full cursor-pointer"
-        >
-          <span className="text-gray-700">
-            {currentValue === undefined
-              ? "None"
-              : currentValue === -1
-              ? "Final Output"
-              : `Function: ${currentValue}`}
-          </span>
-          <svg
-            className={`w-5 h-5 transition-transform ${
-              openDropdownId === functionId ? "transform rotate-180" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </div>
-
-        {/* Dropdown menu */}
-        {openDropdownId === functionId && (
-          <div
-            className="z-[1000] absolute border-gray-200 bg-white shadow-lg mt-1 border rounded-md w-full max-h-60 overflow-auto"
-            style={{ minWidth: "200px" }}
-          >
-            {availableConnections.map((option) => (
-              <div
-                key={option.value}
-                className={`px-4 py-2 ${
-                  option.disabled
-                    ? "cursor-not-allowed text-gray-400 bg-gray-50"
-                    : "cursor-pointer hover:bg-blue-50"
-                } ${
-                  currentValue === Number(option.value) ? "bg-blue-100" : ""
-                }`}
-                onClick={() => {
-                  if (!option.disabled) {
-                    onSelect(option.value);
-                    setOpenDropdownId(null);
-                  }
-                }}
-              >
-                {option.label}
-                {option.disabled && (
-                  <span className="ml-2 text-gray-400 text-xs">
-                    (Not allowed)
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
+    // Cleanup
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      mutationObserver.disconnect();
+    };
+  }, [updateDimensionsAndConnections]);
 
   return (
     <div
@@ -439,7 +471,10 @@ export default function Workflow() {
               key={func.id}
               data-id={func.id}
               className="relative bg-white shadow-md p-4 rounded-lg w-[250px] function-box"
-              style={{ zIndex: openDropdownId === func.id ? 100 : 1 }}
+              style={{
+                position: "relative",
+                zIndex: openDropdownId === func.id ? 9999 : 1,
+              }}
             >
               <div className="mb-4 text-gray-600 text-sm">
                 Function: {func.id}
@@ -464,6 +499,9 @@ export default function Workflow() {
                     onSelect={(value) =>
                       handleNextFunctionChange(func.id, value)
                     }
+                    openDropdownId={openDropdownId}
+                    setOpenDropdownId={setOpenDropdownId}
+                    functions={functions}
                   />
                 </div>
               </div>
