@@ -20,6 +20,23 @@ interface DragConnection {
   end: { x: number; y: number };
 }
 
+const evaluateExpression = (expression: string, x: number): number => {
+  try {
+    // Replace x^2 with x**2 for JavaScript math
+    let jsExpression = expression.replace(/x\^(\d+)/g, "x**$1");
+
+    // Replace x with the actual number
+    jsExpression = jsExpression.replace(/x/g, x.toString());
+
+    // Evaluate the expression
+    const result = eval(jsExpression);
+    return Number(result.toFixed(2));
+  } catch (error) {
+    console.error("Error evaluating expression:", error);
+    return 0;
+  }
+};
+
 export default function Workflow() {
   const [functions, setFunctions] = useState<Function[]>([
     { id: 1, equation: "x^2" },
@@ -185,9 +202,7 @@ export default function Workflow() {
     type?: "input" | "output"
   ) => {
     if (isDragging && activePoint && type && functionId !== undefined) {
-      // Prevent self-connection
       if (functionId !== activePoint.functionId) {
-        // Connect from output to input only
         if (
           (activePoint.type === "output" && type === "input") ||
           (activePoint.type === "input" && type === "output")
@@ -197,25 +212,18 @@ export default function Workflow() {
           const targetId =
             activePoint.type === "output" ? functionId : activePoint.functionId;
 
-          // Handle initial value connection
-          if (sourceId === 0) {
-            // Initial value can only connect to function inputs
-            if (targetId > 0) {
-              setFunctions((prev) =>
-                prev.map((f) =>
-                  f.id === targetId ? { ...f, previousFunction: 0 } : f
-                )
-              );
-            }
-          }
-          // Handle function-to-function or function-to-final connections
-          else if (sourceId > 0) {
-            setFunctions((prev) =>
-              prev.map((f) =>
-                f.id === sourceId ? { ...f, nextFunction: targetId } : f
-              )
-            );
-          }
+          setFunctions((prev) => {
+            const newFunctions = prev.map((f) => {
+              if (f.id === sourceId) {
+                return { ...f, nextFunction: targetId };
+              }
+              if (targetId > 0 && f.id === targetId) {
+                return { ...f, previousFunction: sourceId };
+              }
+              return f;
+            });
+            return newFunctions;
+          });
         }
       }
     }
@@ -310,6 +318,32 @@ export default function Workflow() {
                 ${end.x} ${end.y}`;
     }
   };
+
+  // Add this function to calculate the final output
+  const calculateOutput = useCallback(() => {
+    let currentValue = initialValue;
+    let currentFunctionId: number | undefined = functions.find(
+      (f) => f.previousFunction === 0
+    )?.id;
+
+    while (currentFunctionId && currentFunctionId > 0) {
+      const currentFunction = functions.find((f) => f.id === currentFunctionId);
+      if (!currentFunction) break;
+
+      currentValue = evaluateExpression(currentFunction.equation, currentValue);
+
+      if (currentFunction.nextFunction === -1) {
+        setFinalOutput(currentValue);
+        break;
+      }
+      currentFunctionId = currentFunction.nextFunction;
+    }
+  }, [functions, initialValue]);
+
+  // Add effect to recalculate output when connections or initial value changes
+  useEffect(() => {
+    calculateOutput();
+  }, [calculateOutput, functions, initialValue]);
 
   return (
     <div
