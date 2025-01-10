@@ -170,11 +170,11 @@ const CustomDropdown = ({
 
 export default function Workflow() {
   const [functions, setFunctions] = useState<Function[]>([
-    { id: 1, equation: "x^2", previousFunction: 0 },
-    { id: 2, equation: "2x+4" },
-    { id: 3, equation: "x^2+20" },
-    { id: 4, equation: "x-2" },
-    { id: 5, equation: "x/2" },
+    { id: 1, equation: "x^2", previousFunction: 0, nextFunction: 2 },
+    { id: 2, equation: "2x+4", previousFunction: 1, nextFunction: 4 },
+    { id: 3, equation: "x^2+20", previousFunction: 5, nextFunction: -1 },
+    { id: 4, equation: "x-2", previousFunction: 2, nextFunction: 5 },
+    { id: 5, equation: "x/2", previousFunction: 4, nextFunction: 3 },
   ]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
