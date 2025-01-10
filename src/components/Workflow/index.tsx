@@ -119,11 +119,12 @@ export default function Workflow() {
         targetElement = initialValueEl;
       } else {
         // Connection between functions
-        targetElement = Array.from(boxes).find(
-          (b) =>
-            parseInt(b.getAttribute("data-id") || "0") ===
-            sourceFunc.nextFunction
-        );
+        targetElement =
+          Array.from(boxes).find(
+            (b) =>
+              parseInt(b.getAttribute("data-id") || "0") ===
+              sourceFunc.nextFunction
+          ) || null;
       }
 
       if (sourceBox && targetElement) {
@@ -419,17 +420,13 @@ export default function Workflow() {
 
   // Add this function to handle dropdown changes
   const handleNextFunctionChange = (sourceId: number, targetId: string) => {
-    // Convert targetId to number (-1 for final output, or function id)
-    const targetIdNum = parseInt(targetId);
-
-    // If selecting "none" option, remove the connection
+    // If "None" is selected, remove connections
     if (targetId === "") {
       setFunctions((prev) =>
         prev.map((f) => {
           if (f.id === sourceId) {
             return { ...f, nextFunction: undefined };
           }
-          // Also remove any previous connection to this function
           if (f.previousFunction === sourceId) {
             return { ...f, previousFunction: undefined };
           }
@@ -439,39 +436,43 @@ export default function Workflow() {
       return;
     }
 
-    // Check for invalid connections
-    const sourceFunc = functions.find((f) => f.id === sourceId);
-    const targetFunc = functions.find((f) => f.id === targetIdNum);
+    const targetIdNum = parseInt(targetId);
 
-    // Don't allow self-connection
-    if (sourceId === targetIdNum) {
-      return;
-    }
+    // Handle connections similar to dot connections
+    setFunctions((prev) => {
+      // First check if the connection is valid
+      const isValid = prev.every((f) => {
+        // Don't allow self-connection
+        if (sourceId === targetIdNum) return false;
 
-    // Don't allow circular connections
-    let currentId = targetIdNum;
-    let visited = new Set([sourceId]);
-    while (currentId > 0) {
-      if (visited.has(currentId)) {
-        return; // Circular dependency detected
+        // Don't allow if target already has an input (except when it's the current connection)
+        if (
+          targetIdNum > 0 &&
+          f.id === targetIdNum &&
+          f.previousFunction !== undefined &&
+          f.previousFunction !== sourceId
+        ) {
+          return false;
+        }
+
+        return true;
+      });
+
+      if (!isValid) return prev;
+
+      // Check for circular dependency
+      let currentId = targetIdNum;
+      const visited = new Set([sourceId]);
+      while (currentId > 0) {
+        if (visited.has(currentId)) return prev; // Circular dependency found
+        visited.add(currentId);
+        const nextFunc = prev.find((f) => f.id === currentId);
+        if (!nextFunc) break;
+        currentId = nextFunc.nextFunction || 0;
       }
-      visited.add(currentId);
-      currentId = functions.find((f) => f.id === currentId)?.nextFunction || 0;
-    }
 
-    // Don't allow connection if target already has an input
-    if (targetIdNum > 0 && targetFunc?.previousFunction !== undefined) {
-      return;
-    }
-
-    // Don't allow connection if source already has an output
-    if (sourceFunc?.nextFunction !== undefined) {
-      return;
-    }
-
-    // Update the connections
-    setFunctions((prev) =>
-      prev.map((f) => {
+      // If all checks pass, update the connections
+      return prev.map((f) => {
         if (f.id === sourceId) {
           return { ...f, nextFunction: targetIdNum };
         }
@@ -479,8 +480,8 @@ export default function Workflow() {
           return { ...f, previousFunction: sourceId };
         }
         return f;
-      })
-    );
+      });
+    });
   };
 
   // Add this component inside Workflow but before the return statement
@@ -495,69 +496,40 @@ export default function Workflow() {
   }) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Close dropdown when clicking outside
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (
-          dropdownRef.current &&
-          !dropdownRef.current.contains(event.target as Node)
-        ) {
-          setOpenDropdownId(null);
-        }
-      };
-
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
     // Get available connections
     const availableConnections = [
       { value: "", label: "None" },
       ...functions
         .filter((f) => {
+          // Don't show self
           if (f.id === functionId) return false;
+          // Don't show if already has input (unless it's current connection)
           if (
             f.previousFunction !== undefined &&
             f.previousFunction !== functionId
           )
             return false;
-
-          let currentId = f.id;
-          let visited = new Set([functionId]);
-          while (currentId > 0) {
-            if (visited.has(currentId)) return false;
-            visited.add(currentId);
-            currentId =
-              functions.find((ff) => ff.id === currentId)?.nextFunction || 0;
-          }
           return true;
         })
         .map((f) => ({
           value: f.id.toString(),
           label: `Function: ${f.id}`,
         })),
-      ...(!functions.some((f) => f.nextFunction === -1)
-        ? [{ value: "-1", label: "Final Output" }]
-        : []),
     ];
 
-    const handleOptionClick = (value: string) => {
-      onSelect(value);
-      setOpenDropdownId(null);
-    };
+    // Add Final Output option if not already connected
+    if (!functions.some((f) => f.nextFunction === -1)) {
+      availableConnections.push({ value: "-1", label: "Final Output" });
+    }
 
     return (
       <div className="relative" ref={dropdownRef}>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpenDropdownId(
-              openDropdownId === functionId ? null : functionId
-            );
-          }}
-          className="flex justify-between items-center border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 border rounded-md w-full"
+        {/* Dropdown trigger button */}
+        <div
+          onClick={() =>
+            setOpenDropdownId(openDropdownId === functionId ? null : functionId)
+          }
+          className="flex justify-between items-center border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 border rounded-md w-full cursor-pointer"
         >
           <span className="text-gray-700">
             {currentValue === undefined
@@ -581,24 +553,27 @@ export default function Workflow() {
               d="M19 9l-7 7-7-7"
             />
           </svg>
-        </button>
+        </div>
 
+        {/* Dropdown menu */}
         {openDropdownId === functionId && (
-          <div className="z-50 absolute border-gray-200 bg-white shadow-lg mt-1 border rounded-md w-full max-h-60 overflow-auto">
+          <div
+            className="z-[1000] absolute border-gray-200 bg-white shadow-lg mt-1 border rounded-md w-full max-h-60 overflow-auto"
+            style={{ minWidth: "200px" }}
+          >
             {availableConnections.map((option) => (
-              <button
+              <div
                 key={option.value}
-                type="button"
-                className={`w-full text-left px-4 py-2 cursor-pointer hover:bg-blue-50 ${
+                className={`px-4 py-2 cursor-pointer hover:bg-blue-50 ${
                   currentValue === Number(option.value) ? "bg-blue-100" : ""
                 }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOptionClick(option.value);
+                onClick={() => {
+                  onSelect(option.value);
+                  setOpenDropdownId(null);
                 }}
               >
                 {option.label}
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -645,6 +620,7 @@ export default function Workflow() {
               key={func.id}
               data-id={func.id}
               className="relative bg-white shadow-md p-4 rounded-lg w-[250px] function-box"
+              style={{ zIndex: openDropdownId === func.id ? 100 : 1 }}
             >
               <div className="mb-4 text-gray-600 text-sm">
                 Function: {func.id}
