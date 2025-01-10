@@ -2,6 +2,8 @@ import SixDots from "@/assets/icons/SixDots";
 import { COLORS, FUNCTION_DEFAULTS } from "@/constants/workflow";
 import { SVGDimensions } from "@/types/workflow";
 import { createPath } from "@/utils/workflow";
+import Image from "next/image";
+import background from "@/assets/background/pattern.png";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 
 interface Function {
@@ -172,7 +174,7 @@ export default function Workflow() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [initialValue, setInitialValue] = useState(2);
-  const [finalOutput, setFinalOutput] = useState(120);
+  const [finalOutput, setFinalOutput] = useState(0);
 
   // Add state for SVG dimensions
   const [svgDimensions, setSvgDimensions] = useState<SVGDimensions>({
@@ -441,6 +443,14 @@ export default function Workflow() {
       className="relative flex items-center gap-8 bg-gray-50 p-8 min-h-screen"
       ref={containerRef}
     >
+      <div className="top-0 left-0 fixed bg-gray-50 w-full h-full">
+        <Image
+          src={background}
+          alt="Background"
+          layout="fill"
+          objectFit="cover"
+        />
+      </div>
       {/* Main content */}
       <div className="relative z-10 flex items-center gap-8 w-full">
         {/* Initial Value */}
@@ -448,15 +458,15 @@ export default function Workflow() {
           <span className="bg-[#F5A524] px-4 py-2 rounded-3xl font-semibold text-white text-xs whitespace-nowrap">
             Initial value of x
           </span>
-          <div className="relative flex justify-between items-center gap-4 border-[#F5A524] border-2 bg-white shadow-md px-8 py-0 rounded-2xl">
+          <div className="relative flex items-center gap-4 border-[#F5A524] border-2 bg-white shadow-md rounded-2xl">
             <input
               type="number"
               value={initialValue}
               onChange={(e) => setInitialValue(Number(e.target.value))}
-              className="w-10 font-bold text-2xl text-gray-800"
+              className="pl-4 max-w-[60px] font-bold text-2xl text-gray-800 outline-none"
             />
-            <div className="border-[#F5A524] border-l h-12">
-              <div className="top-1/2 right-3 absolute flex bg-blue-500 rounded-full w-2 h-2 -translate-y-1/2 outline outline-[#DBDBDB] outline-2 outline-offset-2 output-point" />
+            <div className="border-[#F5A524] border-l w-10 h-12">
+              <div className="top-1/2 right-4 absolute flex bg-blue-500 rounded-full w-2 h-2 -translate-y-1/2 outline outline-[#DBDBDB] outline-2 outline-offset-2 output-point" />
             </div>
           </div>
         </div>
@@ -524,14 +534,14 @@ export default function Workflow() {
 
         {/* Final Output */}
         <div className="flex flex-col items-center gap-2 mb-[174px] final-output">
-          <span className="bg-[#4CAF79] px-4 py-2 rounded-3xl font-medium text-white text-xs whitespace-nowrap">
+          <span className="bg-[#4CAF79] px-4 py-2 rounded-3xl font-semibold text-white text-xs whitespace-nowrap">
             Final Output y
           </span>
-          <div className="relative flex justify-between items-center gap-4 border-[#4CAF79] border-2 bg-white shadow-md px-8 py-0 rounded-2xl">
-            <div className="border-[#4CAF79] border-r h-12">
+          <div className="relative flex items-center gap-4 border-[#4CAF79] border-2 bg-white shadow-md rounded-2xl">
+            <div className="border-[#4CAF79] border-r w-10 h-12">
               <div className="top-1/2 left-3 absolute flex bg-blue-500 rounded-full w-2 h-2 -translate-y-1/2 input-point outline outline-[#DBDBDB] outline-2 outline-offset-2" />
             </div>
-            <span className="w-auto min-w-[40px] font-bold text-2xl text-gray-800">
+            <span className="pr-4 min-w-[60px] font-bold text-2xl text-gray-800">
               {finalOutput}
             </span>
           </div>
