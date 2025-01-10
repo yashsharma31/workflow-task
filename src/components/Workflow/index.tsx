@@ -508,7 +508,7 @@ export default function Workflow() {
 
   return (
     <div
-      className="relative flex items-center gap-8 bg-gray-50 p-8 max-w-screen-2xl min-h-screen"
+      className="relative flex justify-center items-center gap-8 bg-gray-50 mx-auto p-8 max-w-screen-2xl min-h-screen"
       ref={containerRef}
     >
       <div className="top-0 left-0 fixed bg-gray-50 w-full h-full">
@@ -626,7 +626,7 @@ export default function Workflow() {
 
       {/* SVG Layer */}
       <svg
-        className="fixed inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         width={svgDimensions.width}
         height={svgDimensions.height}
         style={{ zIndex: 50 }}
