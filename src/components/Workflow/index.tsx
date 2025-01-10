@@ -445,7 +445,7 @@ export default function Workflow() {
       <div className="relative z-10 flex items-center gap-8 w-full">
         {/* Initial Value */}
         <div className="flex flex-col items-center gap-2 initial-value">
-          <span className="bg-[#F5A524] px-4 py-2 rounded-3xl font-medium text-white text-xs whitespace-nowrap">
+          <span className="bg-[#F5A524] px-4 py-2 rounded-3xl font-semibold text-white text-xs whitespace-nowrap">
             Initial value of x
           </span>
           <div className="relative flex justify-between items-center gap-4 border-[#F5A524] border-2 bg-white shadow-md px-8 py-0 rounded-2xl">
