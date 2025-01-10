@@ -345,6 +345,34 @@ export default function Workflow() {
     calculateOutput();
   }, [calculateOutput, functions, initialValue]);
 
+  // Add this function after the other handlers
+  const handleDotClick = (
+    e: React.MouseEvent,
+    functionId: number,
+    type: "input" | "output"
+  ) => {
+    e.stopPropagation();
+
+    setFunctions((prev) =>
+      prev.map((f) => {
+        if (type === "input" && f.id === functionId) {
+          // Remove incoming connection
+          return { ...f, previousFunction: undefined };
+        } else if (type === "output" && f.id === functionId) {
+          // Remove outgoing connection
+          return { ...f, nextFunction: undefined };
+        } else if (type === "output" && f.nextFunction === functionId) {
+          // Remove connection where this function is the target
+          return { ...f, nextFunction: undefined };
+        } else if (type === "input" && f.previousFunction === functionId) {
+          // Remove connection where this function is the source
+          return { ...f, previousFunction: undefined };
+        }
+        return f;
+      })
+    );
+  };
+
   return (
     <div
       className={`relative flex items-center gap-8 bg-gray-50 p-8 min-h-screen ${
@@ -372,6 +400,7 @@ export default function Workflow() {
                 className="top-1/2 right-2 absolute border-2 bg-white hover:bg-blue-100 border-blue-500 rounded-full w-3 h-3 -translate-y-1/2 cursor-pointer output-point"
                 onMouseDown={(e) => handleMouseDown(e, 0, "output")}
                 onMouseUp={(e) => handleMouseUp(e, 0, "output")}
+                onClick={(e) => handleDotClick(e, 0, "output")}
               />
             </div>
           </div>
@@ -416,11 +445,13 @@ export default function Workflow() {
                     className="top-1/2 -left-1.5 absolute border-2 bg-white hover:bg-blue-100 border-blue-500 rounded-full w-3 h-3 -translate-y-1/2 cursor-pointer input-point"
                     onMouseDown={(e) => handleMouseDown(e, func.id, "input")}
                     onMouseUp={(e) => handleMouseUp(e, func.id, "input")}
+                    onClick={(e) => handleDotClick(e, func.id, "input")}
                   />
                   <div
                     className="top-1/2 -right-1.5 absolute border-2 bg-white hover:bg-blue-100 border-blue-500 rounded-full w-3 h-3 -translate-y-1/2 cursor-pointer output-point"
                     onMouseDown={(e) => handleMouseDown(e, func.id, "output")}
                     onMouseUp={(e) => handleMouseUp(e, func.id, "output")}
+                    onClick={(e) => handleDotClick(e, func.id, "output")}
                   />
                 </div>
               </div>
@@ -439,6 +470,7 @@ export default function Workflow() {
                 className="top-1/2 left-2 absolute border-2 bg-white hover:bg-blue-100 border-blue-500 rounded-full w-3 h-3 -translate-y-1/2 cursor-pointer input-point"
                 onMouseDown={(e) => handleMouseDown(e, -1, "input")}
                 onMouseUp={(e) => handleMouseUp(e, -1, "input")}
+                onClick={(e) => handleDotClick(e, -1, "input")}
               />
             </div>
             <span className="w-auto min-w-[40px] font-bold text-2xl text-gray-800">
