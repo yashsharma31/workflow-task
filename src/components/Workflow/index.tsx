@@ -66,6 +66,9 @@ export default function Workflow() {
     type: "input" | "output";
   } | null>(null);
 
+  // Add new state for dropdown
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+
   const getConnectionPoint = (
     element: Element,
     type: "input" | "output",
@@ -99,18 +102,69 @@ export default function Workflow() {
     const finalOutputEl = containerRef.current.querySelector(".final-output");
 
     // Add connections between function boxes
-    Array.from(boxes).forEach((box) => {
-      const boxId = parseInt(box.getAttribute("data-id") || "0");
-      const currentFunction = functions.find((f) => f.id === boxId);
+    functions.forEach((sourceFunc) => {
+      if (sourceFunc.nextFunction === undefined) return;
 
-      // Check for initial value connection
-      if (currentFunction?.previousFunction === 0 && initialValueEl) {
+      const sourceBox = Array.from(boxes).find(
+        (b) => parseInt(b.getAttribute("data-id") || "0") === sourceFunc.id
+      );
+
+      let targetElement: Element | null = null;
+
+      if (sourceFunc.nextFunction === -1) {
+        // Connection to final output
+        targetElement = finalOutputEl;
+      } else if (sourceFunc.nextFunction === 0) {
+        // Connection from initial value
+        targetElement = initialValueEl;
+      } else {
+        // Connection between functions
+        targetElement = Array.from(boxes).find(
+          (b) =>
+            parseInt(b.getAttribute("data-id") || "0") ===
+            sourceFunc.nextFunction
+        );
+      }
+
+      if (sourceBox && targetElement) {
+        const startPoint = getConnectionPoint(
+          sourceBox,
+          "output",
+          containerRect
+        );
+        const endPoint = getConnectionPoint(
+          targetElement,
+          "input",
+          containerRect
+        );
+
+        if (startPoint && endPoint) {
+          newConnections.push({
+            start: startPoint,
+            end: endPoint,
+            isTerminal:
+              sourceFunc.nextFunction === -1 || sourceFunc.nextFunction === 0,
+          });
+        }
+      }
+    });
+
+    // Add initial value connections
+    const initialConnections = functions.filter(
+      (f) => f.previousFunction === 0
+    );
+    initialConnections.forEach((targetFunc) => {
+      const targetBox = Array.from(boxes).find(
+        (b) => parseInt(b.getAttribute("data-id") || "0") === targetFunc.id
+      );
+
+      if (initialValueEl && targetBox) {
         const startPoint = getConnectionPoint(
           initialValueEl,
           "output",
           containerRect
         );
-        const endPoint = getConnectionPoint(box, "input", containerRect);
+        const endPoint = getConnectionPoint(targetBox, "input", containerRect);
 
         if (startPoint && endPoint) {
           newConnections.push({
@@ -120,43 +174,15 @@ export default function Workflow() {
           });
         }
       }
-
-      // Check for next function connection
-      if (currentFunction?.nextFunction) {
-        let nextElement: Element | null = null;
-
-        if (currentFunction.nextFunction === -1) {
-          nextElement = finalOutputEl;
-        } else {
-          nextElement =
-            Array.from(boxes).find(
-              (b) =>
-                parseInt(b.getAttribute("data-id") || "0") ===
-                currentFunction.nextFunction
-            ) || null;
-        }
-
-        if (box && nextElement) {
-          const startPoint = getConnectionPoint(box, "output", containerRect);
-          const endPoint = getConnectionPoint(
-            nextElement,
-            "input",
-            containerRect
-          );
-
-          if (startPoint && endPoint) {
-            newConnections.push({
-              start: startPoint,
-              end: endPoint,
-              isTerminal: currentFunction.nextFunction === -1,
-            });
-          }
-        }
-      }
     });
 
     setConnections(newConnections);
   }, [functions]);
+
+  // Add an effect to update connections when functions change
+  useEffect(() => {
+    updateDimensionsAndConnections();
+  }, [updateDimensionsAndConnections, functions]);
 
   // Mouse event handlers
   const handleMouseDown = (
@@ -373,6 +399,213 @@ export default function Workflow() {
     );
   };
 
+  // Add equation validation function
+  const validateEquation = (equation: string): boolean => {
+    // Allow numbers, x, basic operators (+,-,*,/), exponent (^), and spaces
+    const validPattern = /^[0-9x\s\+\-\*\/\^()\.]+$/;
+    return validPattern.test(equation);
+  };
+
+  // Add function to handle equation changes
+  const handleEquationChange = (functionId: number, newEquation: string) => {
+    if (validateEquation(newEquation)) {
+      setFunctions((prev) =>
+        prev.map((f) =>
+          f.id === functionId ? { ...f, equation: newEquation } : f
+        )
+      );
+    }
+  };
+
+  // Add this function to handle dropdown changes
+  const handleNextFunctionChange = (sourceId: number, targetId: string) => {
+    // Convert targetId to number (-1 for final output, or function id)
+    const targetIdNum = parseInt(targetId);
+
+    // If selecting "none" option, remove the connection
+    if (targetId === "") {
+      setFunctions((prev) =>
+        prev.map((f) => {
+          if (f.id === sourceId) {
+            return { ...f, nextFunction: undefined };
+          }
+          // Also remove any previous connection to this function
+          if (f.previousFunction === sourceId) {
+            return { ...f, previousFunction: undefined };
+          }
+          return f;
+        })
+      );
+      return;
+    }
+
+    // Check for invalid connections
+    const sourceFunc = functions.find((f) => f.id === sourceId);
+    const targetFunc = functions.find((f) => f.id === targetIdNum);
+
+    // Don't allow self-connection
+    if (sourceId === targetIdNum) {
+      return;
+    }
+
+    // Don't allow circular connections
+    let currentId = targetIdNum;
+    let visited = new Set([sourceId]);
+    while (currentId > 0) {
+      if (visited.has(currentId)) {
+        return; // Circular dependency detected
+      }
+      visited.add(currentId);
+      currentId = functions.find((f) => f.id === currentId)?.nextFunction || 0;
+    }
+
+    // Don't allow connection if target already has an input
+    if (targetIdNum > 0 && targetFunc?.previousFunction !== undefined) {
+      return;
+    }
+
+    // Don't allow connection if source already has an output
+    if (sourceFunc?.nextFunction !== undefined) {
+      return;
+    }
+
+    // Update the connections
+    setFunctions((prev) =>
+      prev.map((f) => {
+        if (f.id === sourceId) {
+          return { ...f, nextFunction: targetIdNum };
+        }
+        if (targetIdNum > 0 && f.id === targetIdNum) {
+          return { ...f, previousFunction: sourceId };
+        }
+        return f;
+      })
+    );
+  };
+
+  // Add this component inside Workflow but before the return statement
+  const CustomDropdown = ({
+    functionId,
+    currentValue,
+    onSelect,
+  }: {
+    functionId: number;
+    currentValue?: number;
+    onSelect: (value: string) => void;
+  }) => {
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target as Node)
+        ) {
+          setOpenDropdownId(null);
+        }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    // Get available connections
+    const availableConnections = [
+      { value: "", label: "None" },
+      ...functions
+        .filter((f) => {
+          if (f.id === functionId) return false;
+          if (
+            f.previousFunction !== undefined &&
+            f.previousFunction !== functionId
+          )
+            return false;
+
+          let currentId = f.id;
+          let visited = new Set([functionId]);
+          while (currentId > 0) {
+            if (visited.has(currentId)) return false;
+            visited.add(currentId);
+            currentId =
+              functions.find((ff) => ff.id === currentId)?.nextFunction || 0;
+          }
+          return true;
+        })
+        .map((f) => ({
+          value: f.id.toString(),
+          label: `Function: ${f.id}`,
+        })),
+      ...(!functions.some((f) => f.nextFunction === -1)
+        ? [{ value: "-1", label: "Final Output" }]
+        : []),
+    ];
+
+    const handleOptionClick = (value: string) => {
+      onSelect(value);
+      setOpenDropdownId(null);
+    };
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenDropdownId(
+              openDropdownId === functionId ? null : functionId
+            );
+          }}
+          className="flex justify-between items-center border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 border rounded-md w-full"
+        >
+          <span className="text-gray-700">
+            {currentValue === undefined
+              ? "None"
+              : currentValue === -1
+              ? "Final Output"
+              : `Function: ${currentValue}`}
+          </span>
+          <svg
+            className={`w-5 h-5 transition-transform ${
+              openDropdownId === functionId ? "transform rotate-180" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        {openDropdownId === functionId && (
+          <div className="z-50 absolute border-gray-200 bg-white shadow-lg mt-1 border rounded-md w-full max-h-60 overflow-auto">
+            {availableConnections.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`w-full text-left px-4 py-2 cursor-pointer hover:bg-blue-50 ${
+                  currentValue === Number(option.value) ? "bg-blue-100" : ""
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOptionClick(option.value);
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       className={`relative flex items-center gap-8 bg-gray-50 p-8 min-h-screen ${
@@ -422,23 +655,21 @@ export default function Workflow() {
                   <input
                     type="text"
                     value={func.equation}
-                    readOnly
+                    onChange={(e) =>
+                      handleEquationChange(func.id, e.target.value)
+                    }
                     className="border-gray-200 p-2 border rounded-md w-full"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-gray-700 text-sm">Next function</label>
-                  <select
-                    value={func.nextFunction || ""}
-                    className="border-gray-200 p-2 border rounded-md w-full"
-                  >
-                    <option value="">-</option>
-                    {functions.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        Function: {f.id}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomDropdown
+                    functionId={func.id}
+                    currentValue={func.nextFunction}
+                    onSelect={(value) =>
+                      handleNextFunctionChange(func.id, value)
+                    }
+                  />
                 </div>
                 <div className="relative h-5">
                   <div
