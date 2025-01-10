@@ -35,14 +35,20 @@ const FIXED_EXECUTION_ORDER = {
 
 const evaluateExpression = (expression: string, x: number): number => {
   try {
-    // Replace x^2 with x**2 for JavaScript math
+    // First replace x^2 with x**2 for JavaScript math
     let jsExpression = expression.replace(/x\^(\d+)/g, "x**$1");
 
-    // Replace x with the actual number
-    jsExpression = jsExpression.replace(/x/g, x.toString());
+    // Handle implicit multiplication (like 2x) by adding *
+    jsExpression = jsExpression.replace(/(\d)x/g, "$1*x");
 
-    // Evaluate the expression
-    const result = eval(jsExpression);
+    // Then replace x with the number
+    jsExpression = jsExpression.replace(/x/g, `${x}`);
+
+    // Create a safe function to evaluate the expression
+    const mathFunction = new Function("return " + jsExpression);
+    const result = mathFunction();
+
+    console.log(`Expression: ${expression}, x: ${x}, evaluated: ${result}`);
     return Number(result.toFixed(2));
   } catch (error) {
     console.error("Error evaluating expression:", error);
@@ -308,11 +314,18 @@ export default function Workflow() {
       (f) => f.previousFunction === 0
     )?.id;
 
+    console.log("Starting calculation with initial value:", currentValue);
+
     while (currentFunctionId && currentFunctionId > 0) {
       const currentFunction = functions.find((f) => f.id === currentFunctionId);
       if (!currentFunction) break;
 
+      console.log(
+        `Processing Function ${currentFunctionId}:`,
+        currentFunction.equation
+      );
       currentValue = evaluateExpression(currentFunction.equation, currentValue);
+      console.log(`Result after Function ${currentFunctionId}:`, currentValue);
 
       if (currentFunction.nextFunction === -1) {
         setFinalOutput(currentValue);
