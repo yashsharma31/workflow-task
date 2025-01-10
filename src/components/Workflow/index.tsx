@@ -444,7 +444,7 @@ export default function Workflow() {
       {/* Main content */}
       <div className="relative z-10 flex items-center gap-8 w-full">
         {/* Initial Value */}
-        <div className="flex flex-col items-center gap-2 initial-value">
+        <div className="flex flex-col items-center gap-2 mb-[174px] initial-value">
           <span className="bg-[#F5A524] px-4 py-2 rounded-3xl font-semibold text-white text-xs whitespace-nowrap">
             Initial value of x
           </span>
@@ -461,7 +461,7 @@ export default function Workflow() {
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-center items-center gap-20">
+        <div className="flex flex-wrap justify-center items-center gap-x-40 gap-y-20">
           {functions.map((func) => (
             <div
               key={func.id}
@@ -523,7 +523,7 @@ export default function Workflow() {
         </div>
 
         {/* Final Output */}
-        <div className="flex flex-col items-center gap-2 final-output">
+        <div className="flex flex-col items-center gap-2 mb-[174px] final-output">
           <span className="bg-[#4CAF79] px-4 py-2 rounded-3xl font-medium text-white text-xs whitespace-nowrap">
             Final Output y
           </span>
