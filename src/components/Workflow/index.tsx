@@ -453,7 +453,7 @@ export default function Workflow() {
 
   return (
     <div
-      className="relative flex items-center gap-8 bg-gray-50 p-8 min-h-screen"
+      className="relative flex items-center gap-8 bg-gray-50 p-8 min-h-screen max-w-screen-2xl"
       ref={containerRef}
     >
       <div className="top-0 left-0 fixed bg-gray-50 w-full h-full">
@@ -473,6 +473,7 @@ export default function Workflow() {
           </span>
           <div className="relative flex items-center gap-4 border-[#F5A524] border-2 bg-white shadow-md rounded-2xl">
             <input
+              aria-label="num"
               type="number"
               value={initialValue}
               onChange={(e) => setInitialValue(Number(e.target.value))}
@@ -505,6 +506,7 @@ export default function Workflow() {
                     Equation
                   </label>
                   <input
+                    aria-label="num"
                     type="text"
                     value={func.equation}
                     onChange={(e) =>
