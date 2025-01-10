@@ -441,12 +441,9 @@ export default function Workflow() {
                 onMouseUp={(e) => handleMouseUp(e, -1, "input")}
               />
             </div>
-            <input
-              type="number"
-              value={finalOutput}
-              onChange={(e) => setFinalOutput(Number(e.target.value))}
-              className="w-10 font-bold text-2xl text-gray-800"
-            />
+            <span className="w-auto min-w-[40px] font-bold text-2xl text-gray-800">
+              {finalOutput}
+            </span>
           </div>
         </div>
       </div>
