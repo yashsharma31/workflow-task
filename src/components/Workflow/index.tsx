@@ -1,3 +1,4 @@
+import SixDots from "@/assets/icons/SixDots";
 import { COLORS, FUNCTION_DEFAULTS } from "@/constants/workflow";
 import { SVGDimensions } from "@/types/workflow";
 import { createPath } from "@/utils/workflow";
@@ -98,7 +99,7 @@ const CustomDropdown = ({
         onClick={() =>
           setOpenDropdownId(openDropdownId === functionId ? null : functionId)
         }
-        className="flex justify-between items-center border-gray-200 bg-white hover:bg-gray-50 px-3 py-2 border rounded-md w-full cursor-pointer"
+        className="flex justify-between items-center border-[#D3D3D3] bg-white hover:bg-gray-50 px-3 py-2 border rounded-lg w-full font-medium text-xs cursor-pointer"
       >
         <span className="text-gray-700">
           {currentValue === undefined
@@ -108,7 +109,7 @@ const CustomDropdown = ({
             : `Function: ${currentValue}`}
         </span>
         <svg
-          className={`w-5 h-5 transition-transform ${
+          className={`w-3 h-3 transition-transform ${
             openDropdownId === functionId ? "transform rotate-180" : ""
           }`}
           fill="none"
@@ -127,7 +128,7 @@ const CustomDropdown = ({
       {/* Dropdown menu */}
       {openDropdownId === functionId && (
         <div
-          className="z-[9999] absolute border-gray-200 bg-white shadow-lg mt-1 border rounded-md w-full max-h-60 overflow-auto"
+          className="z-[9999] absolute border-[#D3D3D3] bg-white shadow-lg mt-1 border rounded-lg w-full max-h-60 overflow-auto"
           style={{
             minWidth: "200px",
             position: "absolute",
@@ -138,7 +139,7 @@ const CustomDropdown = ({
           {availableConnections.map((option) => (
             <div
               key={option.value}
-              className={`px-4 py-2 ${
+              className={`px-4 py-2 text-xs font-medium ${
                 option.disabled
                   ? "cursor-not-allowed text-gray-400 bg-gray-50"
                   : "cursor-pointer hover:bg-blue-50"
@@ -151,11 +152,6 @@ const CustomDropdown = ({
               }}
             >
               {option.label}
-              {option.disabled && (
-                <span className="ml-2 text-gray-400 text-xs">
-                  (Not allowed)
-                </span>
-              )}
             </div>
           ))}
         </div>
@@ -460,7 +456,7 @@ export default function Workflow() {
               className="w-10 font-bold text-2xl text-gray-800"
             />
             <div className="border-[#F5A524] border-l h-12">
-              <div className="top-1/2 right-2 absolute border-2 bg-white border-blue-500 rounded-full w-3 h-3 -translate-y-1/2 output-point" />
+              <div className="top-1/2 right-3 absolute flex bg-blue-500 rounded-full w-2 h-2 -translate-y-1/2 outline outline-[#DBDBDB] outline-2 outline-offset-2 output-point" />
             </div>
           </div>
         </div>
@@ -470,29 +466,34 @@ export default function Workflow() {
             <div
               key={func.id}
               data-id={func.id}
-              className="relative bg-white shadow-md p-4 rounded-lg w-[250px] function-box"
+              className="relative border-[#D3D3D3] bg-white px-5 py-4 border rounded-[15px] w-[250px] function-box"
               style={{
                 position: "relative",
                 zIndex: openDropdownId === func.id ? 9999 : 1,
               }}
             >
-              <div className="mb-4 text-gray-600 text-sm">
+              <div className="flex items-center gap-2 mb-4 font-semibold text-[#A5A5A5] text-sm">
+                <SixDots />
                 Function: {func.id}
               </div>
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
-                  <label className="text-gray-700 text-sm">Equation</label>
+                  <label className="font-medium text-gray-700 text-xs">
+                    Equation
+                  </label>
                   <input
                     type="text"
                     value={func.equation}
                     onChange={(e) =>
                       handleEquationChange(func.id, e.target.value)
                     }
-                    className="border-gray-200 p-2 border rounded-md w-full"
+                    className="border-[#D3D3D3] p-2 border rounded-lg w-full font-medium text-xs"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-gray-700 text-sm">Next function</label>
+                  <label className="font-medium text-gray-700 text-xs">
+                    Next function
+                  </label>
                   <CustomDropdown
                     functionId={func.id}
                     currentValue={func.nextFunction}
@@ -505,9 +506,17 @@ export default function Workflow() {
                   />
                 </div>
               </div>
-              <div className="relative h-5">
-                <div className="top-1/2 -left-1.5 absolute border-2 bg-white border-blue-500 rounded-full w-3 h-3 -translate-y-1/2 input-point" />
-                <div className="top-1/2 -right-1.5 absolute border-2 bg-white border-blue-500 rounded-full w-3 h-3 -translate-y-1/2 output-point" />
+              <div className="relative mt-11 h-5">
+                <div className="top-1/2 -left-1.5 absolute flex bg-blue-500 rounded-full w-2 h-2 -translate-y-1/2 input-point outline outline-[#DBDBDB] outline-2 outline-offset-2">
+                  <p className="font-medium text-gray-700 text-xs -translate-y-1/2 translate-x-4">
+                    input
+                  </p>
+                </div>
+                <div className="top-1/2 -right-1.5 absolute flex bg-blue-500 rounded-full w-2 h-2 -translate-y-1/2 outline outline-[#DBDBDB] outline-2 outline-offset-2 output-point">
+                  <p className="font-medium text-gray-700 text-xs -translate-x-[46px] -translate-y-1/2">
+                    output
+                  </p>
+                </div>
               </div>
             </div>
           ))}
@@ -520,7 +529,7 @@ export default function Workflow() {
           </span>
           <div className="relative flex justify-between items-center gap-4 border-[#4CAF79] border-2 bg-white shadow-md px-8 py-0 rounded-2xl">
             <div className="border-[#4CAF79] border-r h-12">
-              <div className="top-1/2 left-2 absolute border-2 bg-white border-blue-500 rounded-full w-3 h-3 -translate-y-1/2 input-point" />
+              <div className="top-1/2 left-3 absolute flex bg-blue-500 rounded-full w-2 h-2 -translate-y-1/2 input-point outline outline-[#DBDBDB] outline-2 outline-offset-2" />
             </div>
             <span className="w-auto min-w-[40px] font-bold text-2xl text-gray-800">
               {finalOutput}

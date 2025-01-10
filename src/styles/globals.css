@@ -25,7 +25,6 @@
 
 .input-point:hover,
 .output-point:hover {
-  transform: scale(1.2) translateY(-50%) !important;
   background-color: #dbeafe;
 }
 
