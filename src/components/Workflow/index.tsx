@@ -11,6 +11,7 @@ interface Function {
   equation: string;
   nextFunction?: number;
   previousFunction?: number;
+  equationError?: string;
 }
 
 interface Connection {
@@ -314,6 +315,13 @@ export default function Workflow() {
       (f) => f.previousFunction === 0
     )?.id;
 
+    // Check if any function has an error
+    const hasErrors = functions.some((f) => f.equationError);
+    if (hasErrors) {
+      setFinalOutput(0);
+      return;
+    }
+
     console.log("Starting calculation with initial value:", currentValue);
 
     while (currentFunctionId && currentFunctionId > 0) {
@@ -341,21 +349,68 @@ export default function Workflow() {
   }, [calculateOutput, functions, initialValue]);
 
   // Add equation validation function
-  const validateEquation = (equation: string): boolean => {
-    // Allow numbers, x, basic operators (+,-,*,/), exponent (^), and spaces
-    const validPattern = /^[0-9x\s\+\-\*\/\^()\.]+$/;
-    return validPattern.test(equation);
+  const validateEquation = (
+    equation: string
+  ): { isValid: boolean; error?: string } => {
+    // Allow empty equation while user is typing
+    if (!equation.trim()) {
+      return { isValid: false, error: "Equation cannot be empty" };
+    }
+
+    // Remove all spaces from the equation for easier validation
+    const cleanEquation = equation.replace(/\s+/g, "");
+
+    // Check if equation contains only allowed characters
+    const validCharPattern = /^[0-9x+\-*/^.]+$/;
+    if (!validCharPattern.test(cleanEquation)) {
+      return {
+        isValid: false,
+        error: "Only numbers, x, and operators (+,-,*,/,^) are allowed",
+      };
+    }
+
+    // Check for invalid patterns that would make the equation incorrect
+    const invalidPatterns = [
+      /\.\./, // Multiple decimal points
+      /[+\-*/^]{2,}/, // Multiple operators in sequence
+      /^\W/, // Equation starting with an operator (except minus)
+      /[+*/^]$/, // Equation ending with an operator
+      /\d+x\d+/, // Numbers on both sides of x (like 2x2)
+    ];
+
+    for (const pattern of invalidPatterns) {
+      if (pattern.test(cleanEquation)) {
+        return {
+          isValid: false,
+          error: "Invalid equation format",
+        };
+      }
+    }
+
+    // Check for basic syntax errors by evaluating
+    try {
+      evaluateExpression(cleanEquation, 1);
+      return { isValid: true };
+    } catch {
+      return { isValid: false, error: "Invalid equation format" };
+    }
   };
 
   // Add function to handle equation changes
   const handleEquationChange = (functionId: number, newEquation: string) => {
-    if (validateEquation(newEquation)) {
-      setFunctions((prev) =>
-        prev.map((f) =>
-          f.id === functionId ? { ...f, equation: newEquation } : f
-        )
-      );
-    }
+    setFunctions((prev) =>
+      prev.map((f) => {
+        if (f.id === functionId) {
+          const validation = validateEquation(newEquation);
+          return {
+            ...f,
+            equation: newEquation,
+            equationError: validation.error,
+          };
+        }
+        return f;
+      })
+    );
   };
 
   // Add this function to handle dropdown changes
@@ -453,7 +508,7 @@ export default function Workflow() {
 
   return (
     <div
-      className="relative flex items-center gap-8 bg-gray-50 p-8 min-h-screen max-w-screen-2xl"
+      className="relative flex items-center gap-8 bg-gray-50 p-8 max-w-screen-2xl min-h-screen"
       ref={containerRef}
     >
       <div className="top-0 left-0 fixed bg-gray-50 w-full h-full">
@@ -506,14 +561,20 @@ export default function Workflow() {
                     Equation
                   </label>
                   <input
-                    aria-label="num"
+                    aria-label="equation"
                     type="text"
                     value={func.equation}
                     onChange={(e) =>
                       handleEquationChange(func.id, e.target.value)
                     }
-                    className="border-[#D3D3D3] p-2 border rounded-lg w-full font-medium text-xs"
+                    className={`border-[#D3D3D3] p-2 border rounded-lg w-full font-medium text-xs
+                      ${func.equationError ? "border-red-500" : ""}`}
                   />
+                  {func.equationError && (
+                    <span className="mt-1 text-red-500 text-xs">
+                      {func.equationError}
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="font-medium text-gray-700 text-xs">
